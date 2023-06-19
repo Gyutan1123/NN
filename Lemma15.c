@@ -147,7 +147,7 @@ void init(int n, float x, float *o) {
 
 void rand_init(int n, float *o) {
     for (int i = 0; i < n; i++) {
-        float x = (float)(rand() % 3 - 1);
+        float x = (float)rand()/RAND_MAX*2-1;
         o[i] = x;
     }
 }

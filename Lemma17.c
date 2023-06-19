@@ -146,7 +146,7 @@ void init(int n, float x, float *o) {
 
 void rand_init(int n, float *o) {
     for (int i = 0; i < n; i++) {
-        float x = (float)(rand() % 3 - 1);
+        float x = (float)rand()/RAND_MAX *2 -1;
         o[i] = x;
     }
 }
@@ -371,6 +371,7 @@ int main() {
     save("fc1.dat", 50, 784, A1, b1);
     save("fc2.dat", 100, 50, A2, b2);
     save("fc3.dat", 10, 100, A3, b3);
+    printf("お疲れさまでした");
     return 0;
     
 }
