@@ -147,7 +147,7 @@ void init(int n, float x, float *o) {
 
 void rand_init(int n, float *o) {
     for (int i = 0; i < n; i++) {
-        float x = (float)rand() /RAND_MAX *2 - 1;
+        float x = (float)rand() / RAND_MAX * 2 - 1;
         o[i] = x;
     }
 }
@@ -303,22 +303,22 @@ int main() {
         index[i] = i;
     }
     /* 変化量を表す変数*/
-        float *dEdA1_v = malloc(sizeof(float) * 50 * 784);
-        float *dEdA2_v = malloc(sizeof(float) * 50 * 100);
-        float *dEdA3_v = malloc(sizeof(float) * 100 * 10);
-        float *dEdb1_v = malloc(sizeof(float) * 50);
-        float *dEdb2_v = malloc(sizeof(float) * 100);
-        float *dEdb3_v = malloc(sizeof(float) * 10);
-        init(784 * 50, 0, dEdA1_v);
-        init(50 * 100, 0, dEdA2_v);
-        init(100 * 10, 0, dEdA3_v);
-        init(50, 0, dEdb1_v);
-        init(100, 0, dEdb2_v);
-        init(10, 0, dEdb3_v);
-    
+    float *dEdA1_v = malloc(sizeof(float) * 50 * 784);
+    float *dEdA2_v = malloc(sizeof(float) * 50 * 100);
+    float *dEdA3_v = malloc(sizeof(float) * 100 * 10);
+    float *dEdb1_v = malloc(sizeof(float) * 50);
+    float *dEdb2_v = malloc(sizeof(float) * 100);
+    float *dEdb3_v = malloc(sizeof(float) * 10);
+    init(784 * 50, 0, dEdA1_v);
+    init(50 * 100, 0, dEdA2_v);
+    init(100 * 10, 0, dEdA3_v);
+    init(50, 0, dEdb1_v);
+    init(100, 0, dEdb2_v);
+    init(10, 0, dEdb3_v);
+
     for (int i = 0; i < epoch; i++) {
         shuffle(train_count, index);
-        
+
         for (int j = 0; j < train_count / n; j++) {
             float *dEdA1_ave = malloc(sizeof(float) * 50 * 784);
             float *dEdA2_ave = malloc(sizeof(float) * 50 * 100);
@@ -418,7 +418,7 @@ int main() {
             free(dEdb2_ave);
             free(dEdb3_ave);
         }
-        
+
         int correct = 0;
         float e = 0;
         for (int i = 0; i < test_count; i++) {
