@@ -147,7 +147,7 @@ void init(int n, float x, float *o) {
 
 void rand_init(int n, float *o) {
     for (int i = 0; i < n; i++) {
-        float x = (float)(rand() % 3 - 1);
+        float x = (float)rand() /RAND_MAX *2 - 1;
         o[i] = x;
     }
 }
@@ -253,18 +253,196 @@ void backward6(const float *A1, const float *b1, const float *A2,
 
 void save(const char *filename, int m, int n, const float *A, const float *b) {
     FILE *write;
-    write = fopen(filename,"w");
+    write = fopen(filename, "wb");
     fwrite(A, sizeof(float), m * n, write);
     fwrite(b, sizeof(float), m, write);
 }
 
-void load (const char * filename, int m, int n, float *A, float *b){
+void load(const char *filename, int m, int n, float *A, float *b) {
     FILE *read;
-    read = fopen(filename, "r");
-    if (!read){
+    read = fopen(filename, "rb");
+    if (!read) {
         printf("Cannot open %c.\n", *filename);
-    } else{
+    } else {
         fread(A, sizeof(float), m * n, read);
         fread(b, sizeof(float), m, read);
     }
+}
+
+int main() {
+    srand(time(NULL));
+    float *train_x = NULL;
+    unsigned char *train_y = NULL;
+    int train_count = -1;
+    float *test_x = NULL;
+    unsigned char *test_y = NULL;
+    int test_count = -1;
+    int width = -1;
+    int height = -1;
+    load_mnist(&train_x, &train_y, &train_count, &test_x, &test_y, &test_count,
+               &width, &height);
+
+    int epoch = 10;
+    int n = 100;
+    float eta = 0.1;
+    float alpha = 0.9;
+    float *A1 = malloc(sizeof(float) * 784 * 50);
+    float *A2 = malloc(sizeof(float) * 50 * 100);
+    float *A3 = malloc(sizeof(float) * 100 * 10);
+    float *b1 = malloc(sizeof(float) * 50);
+    float *b2 = malloc(sizeof(float) * 100);
+    float *b3 = malloc(sizeof(float) * 10);
+    rand_init(784 * 50, A1);
+    rand_init(50 * 100, A2);
+    rand_init(100 * 10, A3);
+    rand_init(50, b1);
+    rand_init(100, b2);
+    rand_init(10, b3);
+    int *index = malloc(sizeof(int) * train_count);
+    for (int i = 0; i < train_count; i++) {
+        index[i] = i;
+    }
+    /* 変化量を表す変数*/
+        float *dEdA1_v = malloc(sizeof(float) * 50 * 784);
+        float *dEdA2_v = malloc(sizeof(float) * 50 * 100);
+        float *dEdA3_v = malloc(sizeof(float) * 100 * 10);
+        float *dEdb1_v = malloc(sizeof(float) * 50);
+        float *dEdb2_v = malloc(sizeof(float) * 100);
+        float *dEdb3_v = malloc(sizeof(float) * 10);
+        init(784 * 50, 0, dEdA1_v);
+        init(50 * 100, 0, dEdA2_v);
+        init(100 * 10, 0, dEdA3_v);
+        init(50, 0, dEdb1_v);
+        init(100, 0, dEdb2_v);
+        init(10, 0, dEdb3_v);
+    
+    for (int i = 0; i < epoch; i++) {
+        shuffle(train_count, index);
+        
+        for (int j = 0; j < train_count / n; j++) {
+            float *dEdA1_ave = malloc(sizeof(float) * 50 * 784);
+            float *dEdA2_ave = malloc(sizeof(float) * 50 * 100);
+            float *dEdA3_ave = malloc(sizeof(float) * 100 * 10);
+            float *dEdb1_ave = malloc(sizeof(float) * 50);
+            float *dEdb2_ave = malloc(sizeof(float) * 100);
+            float *dEdb3_ave = malloc(sizeof(float) * 10);
+
+            init(784 * 50, 0, dEdA1_ave);
+            init(50 * 100, 0, dEdA2_ave);
+            init(100 * 10, 0, dEdA3_ave);
+            init(50, 0, dEdb1_ave);
+            init(100, 0, dEdb2_ave);
+            init(10, 0, dEdb3_ave);
+            init(784 * 50, 0, dEdA1_v);
+            init(50 * 100, 0, dEdA2_v);
+            init(100 * 10, 0, dEdA3_v);
+            init(50, 0, dEdb1_v);
+            init(100, 0, dEdb2_v);
+            init(10, 0, dEdb3_v);
+            for (int k = 0; k < n; k++) {
+                float *dEdA1 = malloc(sizeof(float) * 50 * 784);
+                float *dEdA2 = malloc(sizeof(float) * 50 * 100);
+                float *dEdA3 = malloc(sizeof(float) * 100 * 10);
+                float *dEdb1 = malloc(sizeof(float) * 50);
+                float *dEdb2 = malloc(sizeof(float) * 100);
+                float *dEdb3 = malloc(sizeof(float) * 10);
+                init(50 * 784, 0, dEdA1);
+                init(100 * 50, 0, dEdA2);
+                init(100 * 10, 0, dEdA3);
+                init(50, 0, dEdb1);
+                init(100, 0, dEdb2);
+                init(10, 0, dEdb3);
+                backward6(A1, b1, A2, b2, A3, b3,
+                          train_x + 784 * index[j * n + k],
+                          train_y[index[j * n + k]], dEdA1, dEdb1, dEdA2, dEdb2,
+                          dEdA3, dEdb3);
+                add(50 * 784, dEdA1, dEdA1_ave);
+                add(50 * 100, dEdA2, dEdA2_ave);
+                add(100 * 10, dEdA3, dEdA3_ave);
+                add(50, dEdb1, dEdb1_ave);
+                add(100, dEdb2, dEdb2_ave);
+                add(10, dEdb3, dEdb3_ave);
+                free(dEdA1);
+                free(dEdA2);
+                free(dEdA3);
+                free(dEdb1);
+                free(dEdb2);
+                free(dEdb3);
+            }
+
+            scale(784 * 50, (float)-eta / n, dEdA1_ave);
+            scale(50 * 100, (float)-eta / n, dEdA2_ave);
+            scale(10 * 100, (float)-eta / n, dEdA3_ave);
+            scale(50, (float)-eta / n, dEdb1_ave);
+            scale(100, (float)-eta / n, dEdb2_ave);
+            scale(10, (float)-eta / n, dEdb3_ave);
+
+            scale(784 * 50, alpha, dEdA1_v);
+            add(784 * 50, dEdA1_v, dEdA1_ave);
+            add(784 * 50, dEdA1_ave, A1);
+            /* A1 <- A1 -eta*dEdA1_ave + alpha * dEdA1_v  */
+            equalize(784, dEdA1_ave, dEdA1_v);
+            /* 変化量を dEdA1_vに記録*/
+
+            /* A2 ~ b3 も同様に更新していく*/
+
+            scale(50 * 100, alpha, dEdA2_v);
+            add(50 * 100, dEdA2_v, dEdA2_ave);
+            add(50 * 100, dEdA2_ave, A2);
+            equalize(50 * 100, dEdA2_ave, dEdA2_v);
+
+            scale(10 * 100, alpha, dEdA3_v);
+            add(10 * 100, dEdA3_v, dEdA3_ave);
+            add(10 * 100, dEdA3_ave, A3);
+            equalize(10 * 100, dEdA3_ave, dEdA3_v);
+
+            scale(50, alpha, dEdb1_v);
+            add(50, dEdb1_v, dEdb1_ave);
+            add(50, dEdb1_ave, b1);
+            equalize(50, dEdb1_ave, dEdb1_v);
+
+            scale(100, alpha, dEdb2_v);
+            add(100, dEdb2_v, dEdb2_ave);
+            add(100, dEdb2_ave, b2);
+            equalize(100, dEdb2_ave, dEdb2_v);
+
+            scale(10, alpha, dEdb3_v);
+            add(10, dEdb3_v, dEdb3_ave);
+            add(10, dEdb3_ave, b3);
+            equalize(10, dEdb3_ave, dEdb3_v);
+
+            free(dEdA1_ave);
+            free(dEdA2_ave);
+            free(dEdA3_ave);
+            free(dEdb1_ave);
+            free(dEdb2_ave);
+            free(dEdb3_ave);
+        }
+        
+        int correct = 0;
+        float e = 0;
+        for (int i = 0; i < test_count; i++) {
+            float *y = malloc(sizeof(float) * 10);
+            init(10, 0, y);
+            if (inference6(A1, b1, A2, b2, A3, b3, test_x + i * width * height,
+                           y) == test_y[i]) {
+                correct++;
+            }
+            e += cross_entropy_error(y, test_y[i]);
+            free(y);
+        }
+        printf("epoch%2d 正解率 : %f%%\n", i + 1, correct * 100.0 / test_count);
+        printf("        損失関数 : %f\n", e / test_count);
+    }
+    free(dEdA1_v);
+    free(dEdA2_v);
+    free(dEdA3_v);
+    free(dEdb1_v);
+    free(dEdb2_v);
+    free(dEdb3_v);
+    save("fc1.dat", 50, 784, A1, b1);
+    save("fc2.dat", 100, 50, A2, b2);
+    save("fc3.dat", 10, 100, A3, b3);
+
+    return 0;
 }

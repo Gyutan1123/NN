@@ -190,7 +190,7 @@ int inference6(const float *A1, const float *b1, const float *A2, const float *b
 
 void load (const char * filename, int m, int n, float *A, float *b){
     FILE *read;
-    read = fopen(filename, "r");
+    read = fopen(filename, "rb");
     if (!read){
         printf("Cannot open %c.\n", *filename);
     } else{
