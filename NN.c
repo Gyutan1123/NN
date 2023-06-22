@@ -140,6 +140,12 @@ void add(int n, const float *x, float *o) {
     }
 }
 
+void add_ave(int size, int n, const float *x, float *o) {
+    for (int i = 0; i < size; i++) {
+        o[i] += (float)1 / n * x[i];
+    }
+}
+
 void scale(int n, float x, float *o) {
     for (int i = 0; i < n; i++) {
         o[i] *= x;
@@ -282,8 +288,64 @@ void momentum_update(int n, float *w, float eta, float alpha, float *dEdw,
     add(n, dEdw, v);
     add(n, v, w);
 }
+/* momentum SGD を一回分行う つまり
+1.訓練データをn個ずつ取り出し、それぞれに対しA1 ~ b3 の 勾配を計算し、平均をとる
+2.その勾配と前回の更新量によってA1~b3を更新する 
+3. 1,2を訓練データの個数 / n 回繰り返す
+*/
 
-void momentum_SGD() {}
+void momentum_SGD(float *train_x, unsigned char *train_y, int train_count,
+                  int n, int *index, float *A1, float *b1, float *A2, float *b2,
+                  float *A3, float *b3, float *v_A1, float *v_b1, float *v_A2,
+                  float *v_b2, float *v_A3, float *v_b3, float eta,
+                  float alpha) {
+    for (int i = 0; i < train_count / n; i++) {
+        float *dEdA1_ave = malloc(sizeof(float) * 50 * 784);
+        float *dEdA2_ave = malloc(sizeof(float) * 50 * 100);
+        float *dEdA3_ave = malloc(sizeof(float) * 100 * 10);
+        float *dEdb1_ave = malloc(sizeof(float) * 50);
+        float *dEdb2_ave = malloc(sizeof(float) * 100);
+        float *dEdb3_ave = malloc(sizeof(float) * 10);
+        init(784 * 50, 0, dEdA1_ave);
+        init(50 * 100, 0, dEdA2_ave);
+        init(100 * 10, 0, dEdA3_ave);
+        init(50, 0, dEdb1_ave);
+        init(100, 0, dEdb2_ave);
+        init(10, 0, dEdb3_ave);
+        for (int j = 0; j < n; j++) {
+            float *dEdA1 = malloc(sizeof(float) * 50 * 784);
+            float *dEdA2 = malloc(sizeof(float) * 50 * 100);
+            float *dEdA3 = malloc(sizeof(float) * 100 * 10);
+            float *dEdb1 = malloc(sizeof(float) * 50);
+            float *dEdb2 = malloc(sizeof(float) * 100);
+            float *dEdb3 = malloc(sizeof(float) * 10);
+            init(50 * 784, 0, dEdA1);
+            init(100 * 50, 0, dEdA2);
+            init(100 * 10, 0, dEdA3);
+            init(50, 0, dEdb1);
+            init(100, 0, dEdb2);
+            init(10, 0, dEdb3);
+            backward6(A1, b1, A2, b2, A3, b3, train_x + 784 * index[i * n + j],
+                      train_y[index[i * n + j]], dEdA1, dEdb1, dEdA2, dEdb2,
+                      dEdA3, dEdb3);
+            add_ave(50 * 784, n, dEdA1, dEdA1_ave);
+            add_ave(50 * 100, n, dEdA2, dEdA2_ave);
+            add_ave(100 * 10, n, dEdA3, dEdA3_ave);
+            add_ave(50, n, dEdb1, dEdb1_ave);
+            add_ave(100, n, dEdb2, dEdb2_ave);
+            add_ave(10, n, dEdb3, dEdb3_ave);
+            free_all(6, dEdA1, dEdA2, dEdA3, dEdb1, dEdb2, dEdb3);
+        }
+        momentum_update(784 * 50, A1, eta, alpha, dEdA1_ave, v_A1);
+        momentum_update(50 * 100, A2, eta, alpha, dEdA2_ave, v_A2);
+        momentum_update(100 * 10, A3, eta, alpha, dEdA3_ave, v_A3);
+        momentum_update(50, b1, eta, alpha, dEdb1_ave, v_b1);
+        momentum_update(100, b2, eta, alpha, dEdb2_ave, v_b2);
+        momentum_update(10, b3, eta, alpha, dEdb3_ave, v_b3);
+        free_all(6, dEdA1_ave, dEdA2_ave, dEdA3_ave, dEdb1_ave, dEdb2_ave,
+                 dEdb3_ave);
+    }
+}
 
 int main() {
     srand(time(NULL));
@@ -334,66 +396,8 @@ int main() {
 
     for (int i = 0; i < epoch; i++) {
         shuffle(train_count, index);
-
-        for (int j = 0; j < train_count / n; j++) {
-            float *dEdA1_ave = malloc(sizeof(float) * 50 * 784);
-            float *dEdA2_ave = malloc(sizeof(float) * 50 * 100);
-            float *dEdA3_ave = malloc(sizeof(float) * 100 * 10);
-            float *dEdb1_ave = malloc(sizeof(float) * 50);
-            float *dEdb2_ave = malloc(sizeof(float) * 100);
-            float *dEdb3_ave = malloc(sizeof(float) * 10);
-
-            init(784 * 50, 0, dEdA1_ave);
-            init(50 * 100, 0, dEdA2_ave);
-            init(100 * 10, 0, dEdA3_ave);
-            init(50, 0, dEdb1_ave);
-            init(100, 0, dEdb2_ave);
-            init(10, 0, dEdb3_ave);
-
-            for (int k = 0; k < n; k++) {
-                float *dEdA1 = malloc(sizeof(float) * 50 * 784);
-                float *dEdA2 = malloc(sizeof(float) * 50 * 100);
-                float *dEdA3 = malloc(sizeof(float) * 100 * 10);
-                float *dEdb1 = malloc(sizeof(float) * 50);
-                float *dEdb2 = malloc(sizeof(float) * 100);
-                float *dEdb3 = malloc(sizeof(float) * 10);
-                init(50 * 784, 0, dEdA1);
-                init(100 * 50, 0, dEdA2);
-                init(100 * 10, 0, dEdA3);
-                init(50, 0, dEdb1);
-                init(100, 0, dEdb2);
-                init(10, 0, dEdb3);
-                backward6(A1, b1, A2, b2, A3, b3,
-                          train_x + 784 * index[j * n + k],
-                          train_y[index[j * n + k]], dEdA1, dEdb1, dEdA2, dEdb2,
-                          dEdA3, dEdb3);
-                add(50 * 784, dEdA1, dEdA1_ave);
-                add(50 * 100, dEdA2, dEdA2_ave);
-                add(100 * 10, dEdA3, dEdA3_ave);
-                add(50, dEdb1, dEdb1_ave);
-                add(100, dEdb2, dEdb2_ave);
-                add(10, dEdb3, dEdb3_ave);
-                free_all(6, dEdA1, dEdA2, dEdA3, dEdb1, dEdb2, dEdb3);
-            }
-
-            scale(784 * 50, (float)1 / n, dEdA1_ave);
-            scale(50 * 100, (float)1 / n, dEdA2_ave);
-            scale(10 * 100, (float)1 / n, dEdA3_ave);
-            scale(50, (float)1 / n, dEdb1_ave);
-            scale(100, (float)1 / n, dEdb2_ave);
-            scale(10, (float)1 / n, dEdb3_ave);
-
-            momentum_update(784 * 50, A1, eta, alpha, dEdA1_ave, v_A1);
-            momentum_update(50 * 100, A2, eta, alpha, dEdA2_ave, v_A2);
-            momentum_update(100 * 10, A3, eta, alpha, dEdA3_ave, v_A3);
-
-            momentum_update(50, b1, eta, alpha, dEdb1_ave, v_b1);
-            momentum_update(100, b2, eta, alpha, dEdb2_ave, v_b2);
-            momentum_update(10, b3, eta, alpha, dEdb3_ave, v_b3);
-
-            free_all(6, dEdA1_ave, dEdA2_ave, dEdA3_ave, dEdb1_ave, dEdb2_ave,
-                     dEdb3_ave);
-        }
+        momentum_SGD(train_x, train_y, train_count, n, index, A1, b1, A2, b2,
+                     A3, b3, v_A1, v_b1, v_A2, v_b2, v_A3, v_b3, eta, alpha);
 
         int correct = 0;
         float e = 0;
