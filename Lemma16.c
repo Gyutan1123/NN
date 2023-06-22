@@ -46,8 +46,7 @@ void softmax(int n, const float *x, float *y) {
 }
 int inference3(const float *A, const float *b, const float *x) {
     float *y = malloc(sizeof(float) * 10);
-    for (int i = 0; i < 10; i++)
-        y[i] = 0.0f;
+    for (int i = 0; i < 10; i++) y[i] = 0.0f;
     fc(10, 784, x, A, b, y);
     relu(10, y, y);
     softmax(10, y, y);
@@ -99,8 +98,7 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A,
 
 void backward3(const float *A, const float *b, const float *x, unsigned char t,
                float *y, float *dEdA, float *dEdb) {
-    for (int i = 0; i < 10; i++)
-        y[i] = 0.0f;
+    for (int i = 0; i < 10; i++) y[i] = 0.0f;
     float *FC_in = malloc(sizeof(float) * 784);
     for (int i = 0; i < 784; i++) {
         FC_in[i] = x[i];
@@ -147,7 +145,7 @@ void init(int n, float x, float *o) {
 
 void rand_init(int n, float *o) {
     for (int i = 0; i < n; i++) {
-        float x = (float)rand()/RAND_MAX*2 -1;
+        float x = (float)rand() / RAND_MAX * 2 - 1;
         o[i] = x;
     }
 }
@@ -161,8 +159,9 @@ void shuffle(int n, int *x) {
     }
 }
 
-int inference6(const float *A1, const float *b1, const float *A2, const float *b2, const float *A3,
-               const float *b3, const float * x, float * y){
+int inference6(const float *A1, const float *b1, const float *A2,
+               const float *b2, const float *A3, const float *b3,
+               const float *x, float *y) {
     float *y1 = malloc(sizeof(float) * 50);
     init(50, 0, y1);
     fc(50, 784, x, A1, b1, y1);
@@ -173,7 +172,7 @@ int inference6(const float *A1, const float *b1, const float *A2, const float *b
 
     relu(100, y2, y2);
     fc(10, 100, y2, A3, b3, y);
-    
+
     softmax(10, y, y);
     float ymax = y[0];
     int ymax_index = 0;
@@ -188,20 +187,18 @@ int inference6(const float *A1, const float *b1, const float *A2, const float *b
     return ymax_index;
 };
 
-void load (const char * filename, int m, int n, float *A, float *b){
+void load(const char *filename, int m, int n, float *A, float *b) {
     FILE *read;
-    read = fopen(filename, "r");
-    if (!read){
+    read = fopen(filename, "rb");
+    if (!read) {
         printf("Cannot open %c.\n", *filename);
-    } else{
+    } else {
         fread(A, sizeof(float), m * n, read);
         fread(b, sizeof(float), m, read);
     }
 }
 
-
-
-int main(){
+int main() {
     srand(time(NULL));
     float *train_x = NULL;
     unsigned char *train_y = NULL;
@@ -214,7 +211,7 @@ int main(){
     load_mnist(&train_x, &train_y, &train_count, &test_x, &test_y, &test_count,
                &width, &height);
     float *A1 = malloc(sizeof(float) * 50 * 784);
-    float *A2 = malloc(sizeof(float) * 100 *50 );
+    float *A2 = malloc(sizeof(float) * 100 * 50);
     float *A3 = malloc(sizeof(float) * 10 * 100);
     float *b1 = malloc(sizeof(float) * 50);
     float *b2 = malloc(sizeof(float) * 100);
@@ -227,7 +224,8 @@ int main(){
     for (int i = 0; i < test_count; i++) {
         float *y = malloc(sizeof(float) * 10);
         init(10, 0, y);
-        if (inference6(A1,b1,A2,b2,A3,b3,test_x+i*width*height,y ) == test_y[i]){
+        if (inference6(A1, b1, A2, b2, A3, b3, test_x + i * width * height,
+                       y) == test_y[i]) {
             correct++;
             e += cross_entropy_error(y, test_y[i]);
         }
