@@ -188,7 +188,7 @@ int inference6(const float *A1, const float *b1, const float *A2,
     return ymax_index;
 };
 
-void equalize(int n, const float *x, float *y) {
+void copy(int n, const float *x, float *y) {
     for (int i = 0; i < n; i++) {
         y[i] = x[i];
     }
@@ -201,23 +201,23 @@ void backward6(const float *A1, const float *b1, const float *A2,
     float *y1 = malloc(sizeof(float) * 50);
     init(50, 0, y1);
     float *FC1_in = malloc(sizeof(float) * 784);
-    equalize(784, x, FC1_in);
+    copy(784, x, FC1_in);
     fc(50, 784, x, A1, b1, y1);
     float *ReLU1_in = malloc(sizeof(float) * 50);
-    equalize(50, y1, ReLU1_in);
+    copy(50, y1, ReLU1_in);
     relu(50, y1, y1);
     float *y2 = malloc(sizeof(float) * 100);
     init(100, 0, y2);
     float *FC2_in = malloc(sizeof(float) * 50);
-    equalize(50, y1, FC2_in);
+    copy(50, y1, FC2_in);
     fc(100, 50, y1, A2, b2, y2);
     float *ReLU2_in = malloc(sizeof(float) * 100);
-    equalize(100, y2, ReLU2_in);
+    copy(100, y2, ReLU2_in);
     relu(100, y2, y2);
     float *y3 = malloc(sizeof(float) * 10);
     init(10, 0, y3);
     float *FC3_in = malloc(sizeof(float) * 100);
-    equalize(100, y2, FC3_in);
+    copy(100, y2, FC3_in);
     fc(10, 100, y2, A3, b3, y3);
     softmax(10, y3, y3);
 

@@ -190,7 +190,7 @@ int inference6(const float *A1, const float *b1, const float *A2,
     return ymax_index;
 };
 
-void equalize(int n, const float *x, float *y) {
+void copy(int n, const float *x, float *y) {
     for (int i = 0; i < n; i++) {
         y[i] = x[i];
     }
@@ -203,23 +203,23 @@ void backward6(const float *A1, const float *b1, const float *A2,
     float *y1 = malloc(sizeof(float) * 50);
     init(50, 0, y1);
     float *FC1_in = malloc(sizeof(float) * 784);
-    equalize(784, x, FC1_in);
+    copy(784, x, FC1_in);
     fc(50, 784, x, A1, b1, y1);
     float *ReLU1_in = malloc(sizeof(float) * 50);
-    equalize(50, y1, ReLU1_in);
+    copy(50, y1, ReLU1_in);
     relu(50, y1, y1);
     float *y2 = malloc(sizeof(float) * 100);
     init(100, 0, y2);
     float *FC2_in = malloc(sizeof(float) * 50);
-    equalize(50, y1, FC2_in);
+    copy(50, y1, FC2_in);
     fc(100, 50, y1, A2, b2, y2);
     float *ReLU2_in = malloc(sizeof(float) * 100);
-    equalize(100, y2, ReLU2_in);
+    copy(100, y2, ReLU2_in);
     relu(100, y2, y2);
     float *y3 = malloc(sizeof(float) * 10);
     init(10, 0, y3);
     float *FC3_in = malloc(sizeof(float) * 100);
-    equalize(100, y2, FC3_in);
+    copy(100, y2, FC3_in);
     fc(10, 100, y2, A3, b3, y3);
     softmax(10, y3, y3);
 
@@ -385,7 +385,7 @@ int main() {
             add(784 * 50, dEdA1_v, dEdA1_ave);
             add(784 * 50, dEdA1_ave, A1);
             /* A1 <- A1 -eta*dEdA1_ave + alpha * dEdA1_v  */
-            equalize(784, dEdA1_ave, dEdA1_v);
+            copy(784, dEdA1_ave, dEdA1_v);
             /* 変化量を dEdA1_vに記録*/
 
             /* A2 ~ b3 も同様に更新していく*/
@@ -393,27 +393,27 @@ int main() {
             scale(50 * 100, alpha, dEdA2_v);
             add(50 * 100, dEdA2_v, dEdA2_ave);
             add(50 * 100, dEdA2_ave, A2);
-            equalize(50 * 100, dEdA2_ave, dEdA2_v);
+            copy(50 * 100, dEdA2_ave, dEdA2_v);
 
             scale(10 * 100, alpha, dEdA3_v);
             add(10 * 100, dEdA3_v, dEdA3_ave);
             add(10 * 100, dEdA3_ave, A3);
-            equalize(10 * 100, dEdA3_ave, dEdA3_v);
+            copy(10 * 100, dEdA3_ave, dEdA3_v);
 
             scale(50, alpha, dEdb1_v);
             add(50, dEdb1_v, dEdb1_ave);
             add(50, dEdb1_ave, b1);
-            equalize(50, dEdb1_ave, dEdb1_v);
+            copy(50, dEdb1_ave, dEdb1_v);
 
             scale(100, alpha, dEdb2_v);
             add(100, dEdb2_v, dEdb2_ave);
             add(100, dEdb2_ave, b2);
-            equalize(100, dEdb2_ave, dEdb2_v);
+            copy(100, dEdb2_ave, dEdb2_v);
 
             scale(10, alpha, dEdb3_v);
             add(10, dEdb3_v, dEdb3_ave);
             add(10, dEdb3_ave, b3);
-            equalize(10, dEdb3_ave, dEdb3_v);
+            copy(10, dEdb3_ave, dEdb3_v);
 
             free(dEdA1_ave);
             free(dEdA2_ave);
