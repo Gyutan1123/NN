@@ -1,4 +1,5 @@
 #include "nn.h"
+#define pi  3.14159265358979323846264338327950288 
 
 void print(int m, int n, const float *x) {
     for (int i = 0; i < m; i++) {
@@ -269,6 +270,14 @@ void load(const char *filename, int m, int n, float *A, float *b) {
     }
 }
 
+void gaussian_rand_init(int n,float *o){
+    for (int i = 0; i < n;i++){
+        float u1 = (float)rand() / RAND_MAX;
+        float u2 = (float)rand() / RAND_MAX;
+        o[i] = pow((float)2/n,(float)1/4)*(float)sqrt(-2 * log(u1)) * cos(2 * pi * u2);
+    }
+}
+
 int main() {
     srand(time(NULL));
     float *train_x = NULL;
@@ -292,12 +301,12 @@ int main() {
     float *b1 = malloc(sizeof(float) * 50);
     float *b2 = malloc(sizeof(float) * 100);
     float *b3 = malloc(sizeof(float) * 10);
-    rand_init(784 * 50, A1);
-    rand_init(50 * 100, A2);
-    rand_init(100 * 10, A3);
-    rand_init(50, b1);
-    rand_init(100, b2);
-    rand_init(10, b3);
+    gaussian_rand_init(784 * 50, A1);
+    gaussian_rand_init(50 * 100, A2);
+    gaussian_rand_init(100 * 10, A3);
+    gaussian_rand_init(50, b1);
+    gaussian_rand_init(100, b2);
+    gaussian_rand_init(10, b3);
     int *index = malloc(sizeof(int) * train_count);
     for (int i = 0; i < train_count; i++) {
         index[i] = i;
