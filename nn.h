@@ -13,6 +13,7 @@
 
 #define _POSIX_SOURCE
 //#define _POSIX_C_SOURCE 199309L
+#include <stdarg.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>

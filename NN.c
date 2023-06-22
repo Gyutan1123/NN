@@ -1,5 +1,15 @@
 #include "nn.h"
-#define pi  3.14159265358979323846264338327950288 
+#define pi 3.14159265358979323846264338327950288 /* 円周率*/
+
+/* 動的メモリ確保された配列 n 個 をまとめてfreeする */
+void free_all(int n, ...) {
+    va_list ap;
+    va_start(ap, n);
+    for (int i = 0; i < n; i++) {
+        free(va_arg(ap, float *));
+    }
+    va_end(ap);
+}
 
 void print(int m, int n, const float *x) {
     for (int i = 0; i < m; i++) {
@@ -45,10 +55,10 @@ void softmax(int n, const float *x, float *y) {
         y[k] = exp(x[k] - xmax) / sum;
     }
 }
+
 int inference3(const float *A, const float *b, const float *x) {
     float *y = malloc(sizeof(float) * 10);
-    for (int i = 0; i < 10; i++)
-        y[i] = 0.0f;
+    for (int i = 0; i < 10; i++) y[i] = 0.0f;
     fc(10, 784, x, A, b, y);
     relu(10, y, y);
     softmax(10, y, y);
@@ -100,8 +110,7 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A,
 
 void backward3(const float *A, const float *b, const float *x, unsigned char t,
                float *y, float *dEdA, float *dEdb) {
-    for (int i = 0; i < 10; i++)
-        y[i] = 0.0f;
+    for (int i = 0; i < 10; i++) y[i] = 0.0f;
     float *FC_in = malloc(sizeof(float) * 784);
     for (int i = 0; i < 784; i++) {
         FC_in[i] = x[i];
@@ -119,11 +128,8 @@ void backward3(const float *A, const float *b, const float *x, unsigned char t,
     softmaxwithloss_bwd(10, y, t, dEdx_soft);
     relu_bwd(10, ReLU_in, dEdx_soft, dEdx_relu);
     fc_bwd(10, 784, FC_in, dEdx_relu, A, dEdA, dEdb, dEdx_fc);
-    free(dEdx_soft);
-    free(dEdx_relu);
-    free(FC_in);
-    free(ReLU_in);
-    free(dEdx_fc);
+
+    free_all(5, dEdx_soft, dEdx_relu, dEdx_fc, ReLU_in, FC_in);
 }
 
 float cross_entropy_error(const float *y, int t) { return -log(y[t] + 1e-7); }
@@ -185,8 +191,8 @@ int inference6(const float *A1, const float *b1, const float *A2,
             ymax_index = i;
         }
     }
-    free(y1);
-    free(y2);
+    free_all(2, y1, y2);
+
     return ymax_index;
 };
 
@@ -236,20 +242,8 @@ void backward6(const float *A1, const float *b1, const float *A2,
     relu_bwd(50, ReLU1_in, dEdx_fc2, dEdx_relu1);
     fc_bwd(50, 784, FC1_in, dEdx_relu1, A1, dEdA1, dEdb1, dEdx_fc1);
 
-    free(y1);
-    free(y2);
-    free(y3);
-    free(FC1_in);
-    free(FC2_in);
-    free(FC3_in);
-    free(ReLU1_in);
-    free(ReLU2_in);
-    free(dEdx_soft);
-    free(dEdx_fc1);
-    free(dEdx_fc2);
-    free(dEdx_fc3);
-    free(dEdx_relu1);
-    free(dEdx_relu2);
+    free_all(13, y1, y2, FC1_in, FC2_in, FC3_in, ReLU1_in, ReLU2_in, dEdx_soft,
+             dEdx_fc1, dEdx_fc2, dEdx_fc3, dEdx_relu1, dEdx_relu2);
 }
 
 void save(const char *filename, int m, int n, const float *A, const float *b) {
@@ -270,13 +264,26 @@ void load(const char *filename, int m, int n, float *A, float *b) {
     }
 }
 
-void gaussian_rand_init(int n,float *o){
-    for (int i = 0; i < n;i++){
+void gaussian_rand_init(int n, float *o) {
+    for (int i = 0; i < n; i++) {
         float u1 = (float)rand() / RAND_MAX;
         float u2 = (float)rand() / RAND_MAX;
-        o[i] = sqrt((float)2/n)*(float)sqrt(-2 * log(u1)) * cos(2 * pi * u2);
+        o[i] =
+            sqrt((float)2 / n) * (float)sqrt(-2 * log(u1)) * cos(2 * pi * u2);
     }
 }
+
+/* サイズ n の配列で表されるパラメーター w を　w <- w -eta*dEdw + alpha v
+ * で更新する */
+void momentum_update(int n, float *w, float eta, float alpha, float *dEdw,
+                     float *v) {
+    scale(n, -eta, dEdw);
+    scale(n, alpha, v);
+    add(n, dEdw, v);
+    add(n, v, w);
+}
+
+void momentum_SGD() {}
 
 int main() {
     srand(time(NULL));
@@ -312,18 +319,18 @@ int main() {
         index[i] = i;
     }
     /* 変化量を表す変数*/
-    float *dEdA1_v = malloc(sizeof(float) * 50 * 784);
-    float *dEdA2_v = malloc(sizeof(float) * 50 * 100);
-    float *dEdA3_v = malloc(sizeof(float) * 100 * 10);
-    float *dEdb1_v = malloc(sizeof(float) * 50);
-    float *dEdb2_v = malloc(sizeof(float) * 100);
-    float *dEdb3_v = malloc(sizeof(float) * 10);
-    init(784 * 50, 0, dEdA1_v);
-    init(50 * 100, 0, dEdA2_v);
-    init(100 * 10, 0, dEdA3_v);
-    init(50, 0, dEdb1_v);
-    init(100, 0, dEdb2_v);
-    init(10, 0, dEdb3_v);
+    float *v_A1 = malloc(sizeof(float) * 50 * 784);
+    float *v_A2 = malloc(sizeof(float) * 50 * 100);
+    float *v_A3 = malloc(sizeof(float) * 100 * 10);
+    float *v_b1 = malloc(sizeof(float) * 50);
+    float *v_b2 = malloc(sizeof(float) * 100);
+    float *v_b3 = malloc(sizeof(float) * 10);
+    init(784 * 50, 0, v_A1);
+    init(50 * 100, 0, v_A2);
+    init(100 * 10, 0, v_A3);
+    init(50, 0, v_b1);
+    init(100, 0, v_b2);
+    init(10, 0, v_b3);
 
     for (int i = 0; i < epoch; i++) {
         shuffle(train_count, index);
@@ -342,7 +349,7 @@ int main() {
             init(50, 0, dEdb1_ave);
             init(100, 0, dEdb2_ave);
             init(10, 0, dEdb3_ave);
-            
+
             for (int k = 0; k < n; k++) {
                 float *dEdA1 = malloc(sizeof(float) * 50 * 784);
                 float *dEdA2 = malloc(sizeof(float) * 50 * 100);
@@ -366,61 +373,26 @@ int main() {
                 add(50, dEdb1, dEdb1_ave);
                 add(100, dEdb2, dEdb2_ave);
                 add(10, dEdb3, dEdb3_ave);
-                free(dEdA1);
-                free(dEdA2);
-                free(dEdA3);
-                free(dEdb1);
-                free(dEdb2);
-                free(dEdb3);
+                free_all(6, dEdA1, dEdA2, dEdA3, dEdb1, dEdb2, dEdb3);
             }
 
-            scale(784 * 50, (float)-eta / n, dEdA1_ave);
-            scale(50 * 100, (float)-eta / n, dEdA2_ave);
-            scale(10 * 100, (float)-eta / n, dEdA3_ave);
-            scale(50, (float)-eta / n, dEdb1_ave);
-            scale(100, (float)-eta / n, dEdb2_ave);
-            scale(10, (float)-eta / n, dEdb3_ave);
+            scale(784 * 50, (float)1 / n, dEdA1_ave);
+            scale(50 * 100, (float)1 / n, dEdA2_ave);
+            scale(10 * 100, (float)1 / n, dEdA3_ave);
+            scale(50, (float)1 / n, dEdb1_ave);
+            scale(100, (float)1 / n, dEdb2_ave);
+            scale(10, (float)1 / n, dEdb3_ave);
 
-            scale(784 * 50, alpha, dEdA1_v);
-            add(784 * 50, dEdA1_v, dEdA1_ave);
-            add(784 * 50, dEdA1_ave, A1);
-            /* A1 <- A1 -eta*dEdA1_ave + alpha * dEdA1_v  */
-            copy(784, dEdA1_ave, dEdA1_v);
-            /* 変化量を dEdA1_vに記録*/
+            momentum_update(784 * 50, A1, eta, alpha, dEdA1_ave, v_A1);
+            momentum_update(50 * 100, A2, eta, alpha, dEdA2_ave, v_A2);
+            momentum_update(100 * 10, A3, eta, alpha, dEdA3_ave, v_A3);
 
-            /* A2 ~ b3 も同様に更新していく*/
+            momentum_update(50, b1, eta, alpha, dEdb1_ave, v_b1);
+            momentum_update(100, b2, eta, alpha, dEdb2_ave, v_b2);
+            momentum_update(10, b3, eta, alpha, dEdb3_ave, v_b3);
 
-            scale(50 * 100, alpha, dEdA2_v);
-            add(50 * 100, dEdA2_v, dEdA2_ave);
-            add(50 * 100, dEdA2_ave, A2);
-            copy(50 * 100, dEdA2_ave, dEdA2_v);
-
-            scale(10 * 100, alpha, dEdA3_v);
-            add(10 * 100, dEdA3_v, dEdA3_ave);
-            add(10 * 100, dEdA3_ave, A3);
-            copy(10 * 100, dEdA3_ave, dEdA3_v);
-
-            scale(50, alpha, dEdb1_v);
-            add(50, dEdb1_v, dEdb1_ave);
-            add(50, dEdb1_ave, b1);
-            copy(50, dEdb1_ave, dEdb1_v);
-
-            scale(100, alpha, dEdb2_v);
-            add(100, dEdb2_v, dEdb2_ave);
-            add(100, dEdb2_ave, b2);
-            copy(100, dEdb2_ave, dEdb2_v);
-
-            scale(10, alpha, dEdb3_v);
-            add(10, dEdb3_v, dEdb3_ave);
-            add(10, dEdb3_ave, b3);
-            copy(10, dEdb3_ave, dEdb3_v);
-
-            free(dEdA1_ave);
-            free(dEdA2_ave);
-            free(dEdA3_ave);
-            free(dEdb1_ave);
-            free(dEdb2_ave);
-            free(dEdb3_ave);
+            free_all(6, dEdA1_ave, dEdA2_ave, dEdA3_ave, dEdb1_ave, dEdb2_ave,
+                     dEdb3_ave);
         }
 
         int correct = 0;
@@ -438,12 +410,8 @@ int main() {
         printf("epoch%2d 正解率 : %f%%\n", i + 1, correct * 100.0 / test_count);
         printf("        損失関数 : %f\n", e / test_count);
     }
-    free(dEdA1_v);
-    free(dEdA2_v);
-    free(dEdA3_v);
-    free(dEdb1_v);
-    free(dEdb2_v);
-    free(dEdb3_v);
+    free_all(6, v_A1, v_A2, v_A3, v_b1, v_b2, v_b3);
+
     save("fc1.dat", 50, 784, A1, b1);
     save("fc2.dat", 100, 50, A2, b2);
     save("fc3.dat", 10, 100, A3, b3);
