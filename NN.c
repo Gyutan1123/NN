@@ -146,9 +146,21 @@ void add_ave(int size, int n, const float *x, float *o) {
     }
 }
 
+void scale_and_add(int n, float scale, float *x, float *y) {
+    for (int i = 0; i < n; i++){
+        y[i] += scale * x[i];
+    }
+}
+
 void scale(int n, float x, float *o) {
     for (int i = 0; i < n; i++) {
         o[i] *= x;
+    }
+}
+
+void sqrt_and_div(int n, float *x, float *y, float *o) { 
+    for (int i = 0; i < n; i++){
+        o[i] = y[i] / sqrt(x[i] + 1e-7);
     }
 }
 
@@ -279,6 +291,39 @@ void gaussian_rand_init(int n, float *o) {
     }
 }
 
+void generate(int m, int n, const float *x, float *o) {
+    float shift_i = (float)rand() / RAND_MAX * 2 - 1;
+    float shift_j = (float)rand() / RAND_MAX * 2 - 1;
+    float scale_i = (float)rand() / RAND_MAX * 0.2 + 0.9;
+    float scale_j = (float)rand() / RAND_MAX * 0.2 + 0.9;
+    float theta_xx = (float)rand() / RAND_MAX * 20 - 10;
+    float theta_xy = (float)rand() / RAND_MAX * 20 - 10;
+    float theta_yx = (float)rand() / RAND_MAX * 20 - 10;
+    float theta_yy = (float)rand() / RAND_MAX * 20 - 10;
+    theta_xx *= pi / 180;
+    theta_xy *= pi / 180;
+    theta_yx *= pi / 180;
+    theta_yy *= pi / 180;
+    init(m * n, 0, o);
+    int ci = m / 2;
+    int cj = n / 2;
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            int i_new = ((i - ci + 0.5) * cos(theta_xx) -
+                         (j - cj + 0.5) * sin(theta_xy)) *
+                            scale_i +
+                        shift_i + ci;
+            int j_new = ((i - ci + 0.5) * sin(theta_yx) +
+                         (j - cj + 0.5) * cos(theta_yy)) *
+                            scale_j +
+                        shift_j + cj;
+            if ((i_new >= 0) && (i_new < m) && (j_new >= 0) && (j_new < n)) {
+                o[i_new * n + j_new] = x[i * n + j];
+            }
+        }
+    }
+}
+
 /* サイズ n の配列で表されるパラメーター w を　w <- w -eta*dEdw + alpha v
  * で更新する */
 void momentum_update(int n, float *w, float eta, float alpha, float *dEdw,
@@ -332,8 +377,9 @@ void momentum_SGD(float *train_x, unsigned char *train_y, int train_count,
             init(50, 0, dEdb1);
             init(100, 0, dEdb2);
             init(10, 0, dEdb3);
-
-            backward6(A1, b1, A2, b2, A3, b3, train_x + 784 * index[i * n + j],
+            float *train_x_new = malloc(sizeof(float) * 784);
+            generate(28, 28, train_x + 784 * index[i * n + j], train_x_new);
+            backward6(A1, b1, A2, b2, A3, b3, train_x_new,
                       train_y[index[i * n + j]], dEdA1, dEdb1, dEdA2, dEdb2,
                       dEdA3, dEdb3);
             add_ave(50 * 784, n, dEdA1, dEdA1_ave);
@@ -342,7 +388,7 @@ void momentum_SGD(float *train_x, unsigned char *train_y, int train_count,
             add_ave(50, n, dEdb1, dEdb1_ave);
             add_ave(100, n, dEdb2, dEdb2_ave);
             add_ave(10, n, dEdb3, dEdb3_ave);
-            free_all(6, dEdA1, dEdA2, dEdA3, dEdb1, dEdb2, dEdb3);
+            free_all(7, dEdA1, dEdA2, dEdA3, dEdb1, dEdb2, dEdb3,train_x_new);
         }
         momentum_update(784 * 50, A1, eta, alpha, dEdA1_ave, v_A1);
         momentum_update(50 * 100, A2, eta, alpha, dEdA2_ave, v_A2);
@@ -374,12 +420,12 @@ void test(int epoch, float *A1, float *b1, float *A2, float *b2, float *A3,
 }
 
 /* 配列で表された画像データを平行移動させる */
-void shift(int m, int n, const float *x, float *o,int shift_i,int shift_j) {
-    
+void shift(int m, int n, const float *x, float *o, int shift_i, int shift_j) {
     init(m * n, 0, o);
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
-            if ( (i-shift_i >= 0) && (i-shift_i < m) && (j-shift_j >= 0) && (j-shift_j < n)){
+            if ((i - shift_i >= 0) && (i - shift_i < m) && (j - shift_j >= 0) &&
+                (j - shift_j < n)) {
                 o[i * n + j] = x[(i - shift_i) * n + (j - shift_j)];
             }
         }
@@ -387,17 +433,17 @@ void shift(int m, int n, const float *x, float *o,int shift_i,int shift_j) {
 }
 
 /* 画像データを拡大・縮小する */
-void scaling(int m, int n, const float *x, float *o,float scale_i,
-    float scale_j) {
+void scaling(int m, int n, const float *x, float *o, float scale_i,
+             float scale_j) {
     int ci = m / 2;
     int cj = n / 2;
-    
+
     init(m * n, 0, o);
-    for (int i = 0; i < m;i++){
-        for (int j = 0; j < n;j++){
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
             int i_new = (i - ci) * scale_i + ci;
             int j_new = (j - cj) * scale_j + cj;
-            if ((i_new >= 0) && (i_new < m) && (j_new >= 0) && (j_new <n)){
+            if ((i_new >= 0) && (i_new < m) && (j_new >= 0) && (j_new < n)) {
                 o[i_new * n + j_new] = x[i * n + j];
             }
         }
@@ -405,48 +451,95 @@ void scaling(int m, int n, const float *x, float *o,float scale_i,
 }
 
 /* 画像データの回転*/
-void rotation(int m, int n, const float *x, float *o, float theta){
+void rotation(int m, int n, const float *x, float *o, float theta) {
     theta *= pi / 180;
     int ci = m / 2;
     int cj = n / 2;
     init(m * n, 0, o);
-    for (int i = 0; i < m;i++){
-        for (int j = 0; j < n;j++){
-            int i_new = (i-ci)*cos(theta) - (j-cj)*sin(theta) + ci ;
-            int j_new = (i-ci)*sin(theta) + (j-cj)*cos(theta) + cj ;
-            if ((i_new >= 0) && (i_new < m) && (j_new >= 0) && (j_new <n)){
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            int i_new = (i - ci) * cos(theta) - (j - cj) * sin(theta) + ci;
+            int j_new = (i - ci) * sin(theta) + (j - cj) * cos(theta) + cj;
+            if ((i_new >= 0) && (i_new < m) && (j_new >= 0) && (j_new < n)) {
                 o[i_new * n + j_new] = x[i * n + j];
             }
         }
     }
-
 }
 
-/* ランダムに平行移動、拡大縮小、回転させ新たな画像データを作成する */
-void generate(int m, int n, const float *x, float *o){
-    float shift_i = (float)rand() / RAND_MAX * 4 -2;
-    float shift_j = (float)rand() / RAND_MAX * 4 -2;
-    float scale_i = (float)rand() / RAND_MAX * 0.4 + 0.8;
-    float scale_j = (float)rand() / RAND_MAX * 0.4 + 0.8;
-    float theta_xx = (float)rand() / RAND_MAX * 40 - 20;
-    float theta_xy = (float)rand() / RAND_MAX * 40 - 20;
-    float theta_yx = (float)rand() / RAND_MAX * 40 - 20;
-    float theta_yy = (float)rand() / RAND_MAX * 40 - 20;
-    theta_xx *= pi / 180;
-    theta_xy *= pi / 180;
-    theta_yx *= pi / 180;
-    theta_yy *= pi / 180;
-    init(m * n, 0, o);
-    int ci = m / 2;
-    int cj = n / 2;
-    for (int i = 0; i < m;i++){
-        for (int j = 0; j < n;j++){
-            int i_new = ((i-ci+0.5)*cos(theta_xx) - (j-cj+0.5)*sin(theta_xy))*scale_i+shift_i + ci;
-            int j_new = ((i-ci+0.5)*sin(theta_yx) + (j-cj+0.5)*cos(theta_yy))*scale_j+shift_j + cj;
-            if ((i_new >= 0) && (i_new < m) && (j_new >= 0) && (j_new <n)){
-                o[i_new * n + j_new] = x[i * n + j];
-            }
+/* xのアダマール積を計算し、y に計算結果記録*/
+void Hadamard(int n, const float *x, float *y){
+    for (int i = 0; i < n; i++) {
+        y[i] = x[i] * x[i];
+    }
+}
+
+void Adam_update(int n, float *v, float *h,float *w, float *dEdw,float eta){
+    float beta1 = 0.9;
+    float beta2 = 0.999;
+    scale(n, beta1, v);
+    scale_and_add(n, (1 - beta1), dEdw, v);
+    scale(n, beta2, h);
+    Hadamard(n, dEdw, dEdw);
+    scale_and_add(n, (1 - beta2), dEdw, h);
+    float *dw = malloc(sizeof(float) * n);
+    sqrt_and_div(n, h, v, dw);
+    scale(n, -eta * sqrt(1 - beta2) / (1 - beta1), dw);
+    add(n, dw, w);
+    free(dw);
+}
+
+void Adam(float *train_x, unsigned char *train_y, int train_count,
+                  int n, int *index, float *A1, float *b1, float *A2, float *b2,
+                  float *A3, float *b3, float *v_A1, float *v_b1, float *v_A2,
+                  float *v_b2, float *v_A3, float *v_b3, float eta,
+                  float alpha, float *h_A1, float *h_b1, float *h_A2, float *h_b2, float *h_A3, float *h_b3 ){
+    for (int i = 0; i < train_count / n; i++) {
+        float *dEdA1_ave = malloc(sizeof(float) * 50 * 784);
+        float *dEdA2_ave = malloc(sizeof(float) * 50 * 100);
+        float *dEdA3_ave = malloc(sizeof(float) * 100 * 10);
+        float *dEdb1_ave = malloc(sizeof(float) * 50);
+        float *dEdb2_ave = malloc(sizeof(float) * 100);
+        float *dEdb3_ave = malloc(sizeof(float) * 10);
+        init(784 * 50, 0, dEdA1_ave);
+        init(50 * 100, 0, dEdA2_ave);
+        init(100 * 10, 0, dEdA3_ave);
+        init(50, 0, dEdb1_ave);
+        init(100, 0, dEdb2_ave);
+        init(10, 0, dEdb3_ave);
+         for (int j = 0; j < n; j++) {
+            float *dEdA1 = malloc(sizeof(float) * 50 * 784);
+            float *dEdA2 = malloc(sizeof(float) * 50 * 100);
+            float *dEdA3 = malloc(sizeof(float) * 100 * 10);
+            float *dEdb1 = malloc(sizeof(float) * 50);
+            float *dEdb2 = malloc(sizeof(float) * 100);
+            float *dEdb3 = malloc(sizeof(float) * 10);
+            init(50 * 784, 0, dEdA1);
+            init(100 * 50, 0, dEdA2);
+            init(100 * 10, 0, dEdA3);
+            init(50, 0, dEdb1);
+            init(100, 0, dEdb2);
+            init(10, 0, dEdb3);
+
+            backward6(A1, b1, A2, b2, A3, b3, train_x + 784 * index[i * n + j],
+                      train_y[index[i * n + j]], dEdA1, dEdb1, dEdA2, dEdb2,
+                      dEdA3, dEdb3);
+            add_ave(50 * 784, n, dEdA1, dEdA1_ave);
+            add_ave(50 * 100, n, dEdA2, dEdA2_ave);
+            add_ave(100 * 10, n, dEdA3, dEdA3_ave);
+            add_ave(50, n, dEdb1, dEdb1_ave);
+            add_ave(100, n, dEdb2, dEdb2_ave);
+            add_ave(10, n, dEdb3, dEdb3_ave);
+            free_all(6, dEdA1, dEdA2, dEdA3, dEdb1, dEdb2, dEdb3);
         }
+        Adam_update(50 * 784, v_A1, h_A1, A1, dEdA1_ave, eta);
+        Adam_update(50 * 100, v_A2, h_A2, A2, dEdA2_ave, eta);
+        Adam_update(10 * 100, v_A3, h_A3, A3, dEdA2_ave, eta);
+        Adam_update(50, v_b1, h_b1, b1, dEdb1_ave, eta);
+        Adam_update(100, v_b2, h_b2, b2, dEdb2_ave, eta);
+        Adam_update(10, v_b3, h_b3, b3, dEdb3_ave, eta);
+        free_all(6, dEdA1_ave, dEdA2_ave, dEdA3_ave, dEdb1_ave, dEdb2_ave,
+                 dEdb3_ave);
     }
 }
 
@@ -463,10 +556,10 @@ int main() {
     load_mnist(&train_x, &train_y, &train_count, &test_x, &test_y, &test_count,
                &width, &height);
 
-    int epoch = 10;
+    int epoch = 100;
     int n = 100;
-    float eta = 0.1;
-    float alpha = 0.9;
+    float eta = 0.02;
+    float alpha = 0.85;
     float *A1 = malloc(sizeof(float) * 784 * 50);
     float *A2 = malloc(sizeof(float) * 50 * 100);
     float *A3 = malloc(sizeof(float) * 100 * 10);
