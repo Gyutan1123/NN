@@ -373,6 +373,40 @@ void test(int epoch, float *A1, float *b1, float *A2, float *b2, float *A3,
     printf("        損失関数 : %f\n", e / test_count);
 }
 
+/* 配列で表された画像データを平行移動させる */
+void shift(int m, int n, const float *x, float *o,int shift_i,int shift_j) {
+    
+    init(m * n, 0, o);
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            if ( (i-shift_i >= 0) && (i-shift_i < m) && (j-shift_j >= 0) && (j-shift_j < n)){
+                o[i * n + j] = x[(i - shift_i) * n + (j - shift_j)];
+            }
+        }
+    }
+}
+
+/* 画像データを拡大・縮小する */
+void scaling(int m, int n, const float *x, float *o,float scale_i,
+    float scale_j) {
+    int ci = m / 2;
+    int cj = n / 2;
+    
+    init(m * n, 0, o);
+    for (int i = 0; i < m;i++){
+        for (int j = 0; j < n;j++){
+            int i_new = (i - ci) * scale_i + ci;
+            int j_new = (j - cj) * scale_j + cj;
+            if ((i_new >= 0) && (i_new < m) && (j_new >= 0) && (j_new <n)){
+                o[i_new * n + j_new] = x[i * n + j];
+            }
+        }
+    }
+}
+
+/* 画像データの回転*/
+
+
 int main() {
     srand(time(NULL));
     float *train_x = NULL;
