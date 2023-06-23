@@ -290,7 +290,7 @@ void momentum_update(int n, float *w, float eta, float alpha, float *dEdw,
 }
 /* momentum SGD を一回分行う つまり
 1.訓練データをn個ずつ取り出し、それぞれに対しA1 ~ b3 の 勾配を計算し、平均をとる
-2.その勾配と前回の更新量によってA1~b3を更新する 
+2.その勾配と前回の更新量によってA1~b3を更新する
 3. 1,2を訓練データの個数 / n 回繰り返す
 */
 
@@ -299,6 +299,12 @@ void momentum_SGD(float *train_x, unsigned char *train_y, int train_count,
                   float *A3, float *b3, float *v_A1, float *v_b1, float *v_A2,
                   float *v_b2, float *v_A3, float *v_b3, float eta,
                   float alpha) {
+    init(50 * 784, 0, v_A1);
+    init(100 * 50, 0, v_A2);
+    init(100 * 10, 0, v_A3);
+    init(50, 0, v_b1);
+    init(100, 0, v_b2);
+    init(10, 0, v_b3);
     for (int i = 0; i < train_count / n; i++) {
         float *dEdA1_ave = malloc(sizeof(float) * 50 * 784);
         float *dEdA2_ave = malloc(sizeof(float) * 50 * 100);
@@ -312,6 +318,7 @@ void momentum_SGD(float *train_x, unsigned char *train_y, int train_count,
         init(50, 0, dEdb1_ave);
         init(100, 0, dEdb2_ave);
         init(10, 0, dEdb3_ave);
+
         for (int j = 0; j < n; j++) {
             float *dEdA1 = malloc(sizeof(float) * 50 * 784);
             float *dEdA2 = malloc(sizeof(float) * 50 * 100);
@@ -325,6 +332,7 @@ void momentum_SGD(float *train_x, unsigned char *train_y, int train_count,
             init(50, 0, dEdb1);
             init(100, 0, dEdb2);
             init(10, 0, dEdb3);
+
             backward6(A1, b1, A2, b2, A3, b3, train_x + 784 * index[i * n + j],
                       train_y[index[i * n + j]], dEdA1, dEdb1, dEdA2, dEdb2,
                       dEdA3, dEdb3);
@@ -345,6 +353,24 @@ void momentum_SGD(float *train_x, unsigned char *train_y, int train_count,
         free_all(6, dEdA1_ave, dEdA2_ave, dEdA3_ave, dEdb1_ave, dEdb2_ave,
                  dEdb3_ave);
     }
+}
+
+void test(int epoch, float *A1, float *b1, float *A2, float *b2, float *A3,
+          float *b3, int test_count, float *test_x, unsigned char *test_y) {
+    int correct = 0;
+    float e = 0;
+    for (int i = 0; i < test_count; i++) {
+        float *y = malloc(sizeof(float) * 10);
+        init(10, 0, y);
+        if (inference6(A1, b1, A2, b2, A3, b3, test_x + i * 784, y) ==
+            test_y[i]) {
+            correct++;
+        }
+        e += cross_entropy_error(y, test_y[i]);
+        free(y);
+    }
+    printf("epoch%2d 正解率 : %f%%\n", epoch, correct * 100.0 / test_count);
+    printf("        損失関数 : %f\n", e / test_count);
 }
 
 int main() {
@@ -399,20 +425,7 @@ int main() {
         momentum_SGD(train_x, train_y, train_count, n, index, A1, b1, A2, b2,
                      A3, b3, v_A1, v_b1, v_A2, v_b2, v_A3, v_b3, eta, alpha);
 
-        int correct = 0;
-        float e = 0;
-        for (int i = 0; i < test_count; i++) {
-            float *y = malloc(sizeof(float) * 10);
-            init(10, 0, y);
-            if (inference6(A1, b1, A2, b2, A3, b3, test_x + i * width * height,
-                           y) == test_y[i]) {
-                correct++;
-            }
-            e += cross_entropy_error(y, test_y[i]);
-            free(y);
-        }
-        printf("epoch%2d 正解率 : %f%%\n", i + 1, correct * 100.0 / test_count);
-        printf("        損失関数 : %f\n", e / test_count);
+        test(i + 1, A1, b1, A2, b2, A3, b3, test_count, test_x, test_y);
     }
     free_all(6, v_A1, v_A2, v_A3, v_b1, v_b2, v_b3);
 
