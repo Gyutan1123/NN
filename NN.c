@@ -405,7 +405,50 @@ void scaling(int m, int n, const float *x, float *o,float scale_i,
 }
 
 /* 画像データの回転*/
+void rotation(int m, int n, const float *x, float *o, float theta){
+    theta *= pi / 180;
+    int ci = m / 2;
+    int cj = n / 2;
+    init(m * n, 0, o);
+    for (int i = 0; i < m;i++){
+        for (int j = 0; j < n;j++){
+            int i_new = (i-ci)*cos(theta) - (j-cj)*sin(theta) + ci ;
+            int j_new = (i-ci)*sin(theta) + (j-cj)*cos(theta) + cj ;
+            if ((i_new >= 0) && (i_new < m) && (j_new >= 0) && (j_new <n)){
+                o[i_new * n + j_new] = x[i * n + j];
+            }
+        }
+    }
 
+}
+
+/* ランダムに平行移動、拡大縮小、回転させ新たな画像データを作成する */
+void generate(int m, int n, const float *x, float *o){
+    float shift_i = (float)rand() / RAND_MAX * 4 -2;
+    float shift_j = (float)rand() / RAND_MAX * 4 -2;
+    float scale_i = (float)rand() / RAND_MAX * 0.4 + 0.8;
+    float scale_j = (float)rand() / RAND_MAX * 0.4 + 0.8;
+    float theta_xx = (float)rand() / RAND_MAX * 40 - 20;
+    float theta_xy = (float)rand() / RAND_MAX * 40 - 20;
+    float theta_yx = (float)rand() / RAND_MAX * 40 - 20;
+    float theta_yy = (float)rand() / RAND_MAX * 40 - 20;
+    theta_xx *= pi / 180;
+    theta_xy *= pi / 180;
+    theta_yx *= pi / 180;
+    theta_yy *= pi / 180;
+    init(m * n, 0, o);
+    int ci = m / 2;
+    int cj = n / 2;
+    for (int i = 0; i < m;i++){
+        for (int j = 0; j < n;j++){
+            int i_new = ((i-ci+0.5)*cos(theta_xx) - (j-cj+0.5)*sin(theta_xy))*scale_i+shift_i + ci;
+            int j_new = ((i-ci+0.5)*sin(theta_yx) + (j-cj+0.5)*cos(theta_yy))*scale_j+shift_j + cj;
+            if ((i_new >= 0) && (i_new < m) && (j_new >= 0) && (j_new <n)){
+                o[i_new * n + j_new] = x[i * n + j];
+            }
+        }
+    }
+}
 
 int main() {
     srand(time(NULL));
