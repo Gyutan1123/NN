@@ -40,7 +40,7 @@ void softmax(int n, const float *x, float *y) {
         sum += exp(x[k] - xmax);
     }
     for (int k = 0; k < n; k++) {
-        y[k] = exp(x[k] - xmax) / sum;
+        y[k] = exp(x[k] - xmax) / (sum+1e-7);
     }
 }
 int inference3(const float *A, const float *b, const float *x) {
@@ -261,7 +261,7 @@ void load (const char * filename, int m, int n, float *A, float *b){
     FILE *read;
     read = fopen(filename, "rb");
     if (!read){
-        printf("Cannot open %c.\n", *filename);
+        printf("Cannot open %s.\n", *filename);
     } else{
         fread(A, sizeof(float), m * n, read);
         fread(b, sizeof(float), m, read);
@@ -278,10 +278,10 @@ int main(int argc, char *argv[]) {
     float *b3 = malloc(sizeof(float) * 10);
     float *x = load_mnist_bmp(argv[4]);
     float *y = malloc(sizeof(float) * 10);
+    init(10, 0, y);
     load(argv[1], 50, 784, A1, b1);
     load(argv[2], 100, 50, A2, b2);
     load(argv[3], 10, 100, A3, b3);
     printf("この数字は%dです。\n", inference6(A1, b1, A2, b2, A3, b3, x, y));
-    
     return 0;
 }

@@ -425,8 +425,8 @@ void test(int epoch, float *A1, float *b1, float *A2, float *b2, float *A3,
         e += cross_entropy_error(y, test_y[i]);
         free(y);
     }
-    printf("epoch%2d 正解率 : %f%%\n", epoch, correct * 100.0 / test_count);
-    printf("        損失関数 : %f\n", e / test_count);
+    printf("Accuracy = %f%% , Loss Avg = %f ",correct*100.0/test_count,e/test_count);
+    
 }
 
 /* 配列で表された画像データを平行移動させる */
@@ -568,9 +568,9 @@ int main(int argc, char *argv[]) {
     load_mnist(&train_x, &train_y, &train_count, &test_x, &test_y, &test_count,
                &width, &height);
 
-    int epoch = 200;
+    int epoch = 10;
     int n = 100;
-    float eta = 0.009;
+    float eta = 0.001;
     float alpha = 0.9;
     float *A1 = malloc(sizeof(float) * 784 * 50);
     float *A2 = malloc(sizeof(float) * 50 * 100);
@@ -623,10 +623,14 @@ int main(int argc, char *argv[]) {
         /* Adam(train_x, train_y, train_count, n, index, A1, b1, A2, b2, A3, b3,
              v_A1, v_b1, v_A2, v_b2, v_A3, v_b3, eta, h_A1, h_b1, h_A2, h_b2,
              h_A3, h_b3); */
+        printf("Epoch %3d/%d\n", i + 1, epoch);
+        printf("Train : ");
+        test(i + 1, A1, b1, A2, b2, A3, b3, train_count, train_x, train_y);
+        printf("Test : ");
         test(i + 1, A1, b1, A2, b2, A3, b3, test_count, test_x, test_y);
+        printf("\n");
     }
     free_all(6, v_A1, v_A2, v_A3, v_b1, v_b2, v_b3);
-
     save("fc1.dat", 50, 784, A1, b1);
     save("fc2.dat", 100, 50, A2, b2);
     save("fc3.dat", 10, 100, A3, b3);
