@@ -634,6 +634,5 @@ int main(int argc, char *argv[]) {
     save("fc1.dat", 50, 784, A1, b1);
     save("fc2.dat", 100, 50, A2, b2);
     save("fc3.dat", 10, 100, A3, b3);
-
     return 0;
 }

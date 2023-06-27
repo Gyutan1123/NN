@@ -268,7 +268,6 @@ void load (const char * filename, int m, int n, float *A, float *b){
     }
 }
 
-
 int main(int argc, char *argv[]) {
     float *A1 = malloc(sizeof(float) * 784 * 50);
     float *b1 = malloc(sizeof(float) * 50);
