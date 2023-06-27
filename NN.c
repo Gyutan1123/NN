@@ -282,7 +282,7 @@ void load(const char *filename, int m, int n, float *A, float *b) {
     FILE *read;
     read = fopen(filename, "rb");
     if (!read) {
-        printf("Cannot open %c.\n", *filename);
+        printf("Cannot open %s.\n", *filename);
     } else {
         fread(A, sizeof(float), m * n, read);
         fread(b, sizeof(float), m, read);
