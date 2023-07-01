@@ -245,7 +245,7 @@ void load(const char *filename, int m, int n, float *A, float *b) {
     FILE *read;
     read = fopen(filename, "rb");
     if (!read) {
-        printf("Cannot open %s.\n", filename);
+        printf("Cannot open file %s.\n", filename);
     } else {
         fread(A, sizeof(float), m * n, read);
         fread(b, sizeof(float), m, read);
@@ -263,20 +263,20 @@ void gaussian_rand_init(int n, float *o) {
 
 /* m*n ビットで表される画像 x を、ランダムに 平行移動、拡大縮小、回転させ、新たな画像を生成し、それを o に保存する。 */
 void generate(int m, int n, const float *x, float *o) {
-    float shift_i = rand01() * 4 - 2;
+    float shift_i = rand01() * 4 - 2; /*上下左右に±2ビット平行移動される*/
     float shift_j = rand01() * 4 - 2;
-    float scale_i = rand01() * 0.2 + 0.9;
+    float scale_i = rand01() * 0.2 + 0.9; /*上下左右に 0.9 ~ 1.1 倍される*/
     float scale_j = rand01() * 0.2 + 0.9;
-    float theta_xx = rand01() * 20 - 10;
-    float theta_xy = rand01() * 20 - 10;
+    float theta_xx = rand01() * 20 - 10; /* -10 ~ 20度回転 */
+    float theta_xy = rand01() * 20 - 10; /*ねじれた画像も作るために、回転のパラメータを4つにしている*/
     float theta_yx = rand01() * 20 - 10;
     float theta_yy = rand01() * 20 - 10;
-    theta_xx *= pi / 180;
+    theta_xx *= pi / 180; /*ラジアン*/
     theta_xy *= pi / 180;
     theta_yx *= pi / 180;
     theta_yy *= pi / 180;
     init(m * n, 0, o);
-    int ci = m / 2;
+    int ci = m / 2; /*画像の中心*/
     int cj = n / 2;
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
@@ -323,8 +323,8 @@ void momentum_SGD(float *train_x, unsigned char *train_y, int train_count,
     init(10, 0, v_b3);
 
     for (int i = 0; i < train_count / n; i++) {
-        float *dEdA1_ave = malloc(sizeof(float) * 50 * 784);
-        float *dEdA2_ave = malloc(sizeof(float) * 50 * 100);
+        float *dEdA1_ave = malloc(sizeof(float) * 50 * 784); /*ミニバッチに含まれる各パラメータによる、*/
+        float *dEdA2_ave = malloc(sizeof(float) * 50 * 100); /*勾配の平均*/
         float *dEdA3_ave = malloc(sizeof(float) * 100 * 10);
         float *dEdb1_ave = malloc(sizeof(float) * 50);
         float *dEdb2_ave = malloc(sizeof(float) * 100);
@@ -378,8 +378,8 @@ void momentum_SGD(float *train_x, unsigned char *train_y, int train_count,
 /* 各fc層のパラメータ、テストケースの個数、テストケース、答えを渡して、正答率及び損失関数の平均を計算*/
 void test(float *A1, float *b1, float *A2, float *b2, float *A3,
           float *b3, int test_count, float *test_x, unsigned char *test_y) {
-    int correct = 0;
-    float e = 0;
+    int correct = 0; /*正解した個数*/
+    float e = 0; /*損失関数の和*/
     for (int i = 0; i < test_count; i++) {
         float *y = malloc(sizeof(float) * 10);
         init(10, 0, y);
@@ -428,7 +428,6 @@ int main(int argc, char *argv[]) {
     gaussian_rand_init(50, b1);
     gaussian_rand_init(100, b2);
     gaussian_rand_init(10, b3);
-
     int *index = malloc(sizeof(int) * train_count);
     for (int i = 0; i < train_count; i++) {
         index[i] = i;
