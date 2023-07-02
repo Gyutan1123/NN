@@ -133,8 +133,7 @@ float rand01() {
 /*サイズnの配列oを各要素[0:1]の一様乱数で初期化する*/
 void rand_init(int n, float *o) {
     for (int i = 0; i < n; i++) {
-        float x = rand01();
-        o[i] = x;
+        o[i] = rand01()*2 -1;
     }
 }
 
