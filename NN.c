@@ -1,5 +1,4 @@
 #include "nn.h"
-#include "MT.h" 
 #define pi 3.14159265358979323846264338327950288 /* 円周率*/
 
 /* 動的メモリ確保された配列 n 個 をまとめてfreeする */
@@ -126,10 +125,9 @@ void init(int n, float x, float *o) {
     }
 }
 
-/* [0:1]の一様乱数従うfloat型の値を返却する */
+/* [0:1]の一様乱数に従うfloat型の値を返却する */
 float rand01() {
-    return (float)genrand_real1();
-    /* return rand() / RAND_MAX * 2 - 1; */
+    return (float)rand() / RAND_MAX ;
 }
 
 /*サイズnの配列oを各要素[0:1]の一様乱数で初期化する*/
@@ -395,7 +393,6 @@ void test(float *A1, float *b1, float *A2, float *b2, float *A3,
 }
 
 int main(int argc, char *argv[]) {
-    init_genrand(time(NULL));
     srand(time(NULL));
     float *train_x = NULL;
     unsigned char *train_y = NULL;
