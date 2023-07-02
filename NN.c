@@ -66,7 +66,8 @@ void softmaxwithloss_bwd(int n, const float *y, unsigned char t, float *dEdx) {
         }
     }
 }
-/* n*1行列 x を入力とする relu層において、上流からの勾配dEdy によって下流への勾配dEdxを計算する */
+/* n*1行列 x を入力とする relu層において、上流からの勾配dEdy
+ * によって下流への勾配dEdxを計算する */
 void relu_bwd(int n, const float *x, const float *dEdy, float *dEdx) {
     for (int i = 0; i < n; i++) {
         if (x[i] > 0) {
@@ -76,7 +77,8 @@ void relu_bwd(int n, const float *x, const float *dEdy, float *dEdx) {
         }
     }
 }
-/* m*n行列A, m*1行列b について、fc層に入力されるn*1行列x, m*1行列で表される上流の層からの勾配dEdyを用いてdEdA,dEdbを計算
+/* m*n行列A, m*1行列b について、fc層に入力されるn*1行列x,
+m*1行列で表される上流の層からの勾配dEdyを用いてdEdA,dEdbを計算
 また、下流への勾配dEdxを計算する */
 void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A,
             float *dEdA, float *dEdb, float *dEdx) {
@@ -94,7 +96,8 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A,
     }
 }
 
-/*損失関数E=-Σt_klog(y_k) を計算し、それを戻り値とするとする。0の対数をとってしまわないように、微小量1e-7を加える*/
+/*損失関数E=-Σt_klog(y_k)
+ * を計算し、それを戻り値とするとする。0の対数をとってしまわないように、微小量1e-7を加える*/
 float cross_entropy_error(const float *y, int t) { return -log(y[t] + 1e-7); }
 
 /*サイズnの配列x,oに対し、oの各要素にxの各要素を足す*/
@@ -126,18 +129,17 @@ void init(int n, float x, float *o) {
 }
 
 /* [0:1]の一様乱数に従うfloat型の値を返却する */
-float rand01() {
-    return (float)rand() / RAND_MAX ;
-}
+float rand01() { return (float)rand() / RAND_MAX; }
 
 /*サイズnの配列oを各要素[0:1]の一様乱数で初期化する*/
 void rand_init(int n, float *o) {
     for (int i = 0; i < n; i++) {
-        o[i] = rand01()*2 -1;
+        o[i] = rand01() * 2 - 1;
     }
 }
 
-/*0~n-1 について、x[i] を x[j] (jは0~n-1の乱数)と入れ替えることで、サイズ n の配列 x をシャッフルする*/
+/*0~n-1 について、x[i] を x[j] (jは0~n-1の乱数)と入れ替えることで、サイズ n
+ * の配列 x をシャッフルする*/
 void shuffle(int n, int *x) {
     for (int i = 0; i < n; i++) {
         int j = rand() % n;
@@ -183,7 +185,8 @@ void copy(int n, const float *x, float *y) {
     }
 }
 
-/* 各fc層のパラメータ、NNに対する入力 x 答え t , 損失関数EのA1 ~ b3 の偏微分を表す配列を入力とし、
+/* 各fc層のパラメータ、NNに対する入力 x 答え t , 損失関数EのA1 ~ b3
+の偏微分を表す配列を入力とし、
 各層への入力をそれぞれ記録しながら、順にNNの構成にしたがって計算していく。
 その後、最終的な計算結果から、逆方向に勾配を計算していき、EのA1~b3の偏微分を計算する*/
 void backward6(const float *A1, const float *b1, const float *A2,
@@ -228,7 +231,8 @@ void backward6(const float *A1, const float *b1, const float *A2,
              dEdx_fc1, dEdx_fc2, dEdx_fc3, dEdx_relu1, dEdx_relu2);
 }
 
-/* 指定したファイル名に、ポインタA,bが指しているサイズ m*n , mの配列を、m*n , m*1 行列として保存する */
+/* 指定したファイル名に、ポインタA,bが指しているサイズ m*n , mの配列を、m*n ,
+ * m*1 行列として保存する */
 void save(const char *filename, int m, int n, const float *A, const float *b) {
     FILE *write;
     write = fopen(filename, "wb");
@@ -236,7 +240,8 @@ void save(const char *filename, int m, int n, const float *A, const float *b) {
     fwrite(b, sizeof(float), m, write);
 }
 
-/* 指定したバイナリファイルに保存されている、m*n行列A,m*1行列b を、ポインタA,bが示す配列に格納する
+/* 指定したバイナリファイルに保存されている、m*n行列A,m*1行列b
+を、ポインタA,bが示す配列に格納する
 ファイルが存在しない場合はエラー文を表示する*/
 void load(const char *filename, int m, int n, float *A, float *b) {
     FILE *read;
@@ -252,20 +257,23 @@ void load(const char *filename, int m, int n, float *A, float *b) {
 /* Box-Muller法と変数変換により、標準偏差\sqrt{\frac{2}{n}} のガウス分布を実装*/
 void gaussian_rand_init(int n, float *o) {
     for (int i = 0; i < n; i++) {
-        float u1 = rand01();
-        float u2 = rand01();
+        float u1 = (float)(rand() + 0.5) / (RAND_MAX + 1.0);
+        float u2 = (float)(rand() + 0.5) / (RAND_MAX + 1.0);
         o[i] = sqrt((float)2 / n) * (float)sqrt(-2 * log(u1)) * cos(2 * pi * u2);
     }
 }
 
-/* m*n ビットで表される画像 x を、ランダムに 平行移動、拡大縮小、回転させ、新たな画像を生成し、それを o に保存する。 */
+/* m*n ビットで表される画像 x を、ランダムに
+ * 平行移動、拡大縮小、回転させ、新たな画像を生成し、それを o に保存する。 */
 void generate(int m, int n, const float *x, float *o) {
     float shift_i = rand01() * 4 - 2; /*上下左右に±2ビット平行移動される*/
     float shift_j = rand01() * 4 - 2;
     float scale_i = rand01() * 0.2 + 0.9; /*上下左右に 0.9 ~ 1.1 倍される*/
     float scale_j = rand01() * 0.2 + 0.9;
     float theta_xx = rand01() * 20 - 10; /* -10 ~ 20度回転 */
-    float theta_xy = rand01() * 20 - 10; /*ねじれた画像も作るために、回転のパラメータを4つにしている*/
+    float theta_xy =
+        rand01() * 20 -
+        10; /*ねじれた画像も作るために、回転のパラメータを4つにしている*/
     float theta_yx = rand01() * 20 - 10;
     float theta_yy = rand01() * 20 - 10;
     theta_xx *= pi / 180; /*ラジアン*/
@@ -320,7 +328,9 @@ void momentum_SGD(float *train_x, unsigned char *train_y, int train_count,
     init(10, 0, v_b3);
 
     for (int i = 0; i < train_count / n; i++) {
-        float *dEdA1_ave = malloc(sizeof(float) * 50 * 784); /*ミニバッチに含まれる各パラメータによる、*/
+        float *dEdA1_ave =
+            malloc(sizeof(float) * 50 *
+                   784); /*ミニバッチに含まれる各パラメータによる、*/
         float *dEdA2_ave = malloc(sizeof(float) * 50 * 100); /*勾配の平均*/
         float *dEdA3_ave = malloc(sizeof(float) * 100 * 10);
         float *dEdb1_ave = malloc(sizeof(float) * 50);
@@ -373,10 +383,10 @@ void momentum_SGD(float *train_x, unsigned char *train_y, int train_count,
 }
 
 /* 各fc層のパラメータ、テストケースの個数、テストケース、答えを渡して、正答率及び損失関数の平均を計算*/
-void test(float *A1, float *b1, float *A2, float *b2, float *A3,
-          float *b3, int test_count, float *test_x, unsigned char *test_y) {
+void test(float *A1, float *b1, float *A2, float *b2, float *A3, float *b3,
+          int test_count, float *test_x, unsigned char *test_y) {
     int correct = 0; /*正解した個数*/
-    float e = 0; /*損失関数の和*/
+    float e = 0;     /*損失関数の和*/
     for (int i = 0; i < test_count; i++) {
         float *y = malloc(sizeof(float) * 10);
         init(10, 0, y);
@@ -387,8 +397,8 @@ void test(float *A1, float *b1, float *A2, float *b2, float *A3,
         e += cross_entropy_error(y, test_y[i]);
         free(y);
     }
-    printf("Accuracy = %f%% , Loss Avg = %f ",correct*100.0/test_count,e/test_count);
-    
+    printf("Accuracy = %f%% , Loss Avg = %f ", correct * 100.0 / test_count,
+           e / test_count);
 }
 
 int main(int argc, char *argv[]) {
@@ -404,9 +414,9 @@ int main(int argc, char *argv[]) {
     load_mnist(&train_x, &train_y, &train_count, &test_x, &test_y, &test_count,
                &width, &height);
 
-    int epoch = 10; /*エポック数*/
-    int n = 100; /*ミニバッチサイズ*/
-    float eta = 0.1; /* 学習率*/
+    int epoch = 10;    /*エポック数*/
+    int n = 100;       /*ミニバッチサイズ*/
+    float eta = 0.1;   /* 学習率*/
     float alpha = 0.9; /* momentumの係数*/
     /*Ai bi はfci層のパラメータ*/
     float *A1 = malloc(sizeof(float) * 784 * 50);
@@ -442,18 +452,21 @@ int main(int argc, char *argv[]) {
     init(100, 0, v_b2);
     init(10, 0, v_b3);
     for (int i = 0; i < epoch; i++) { /*以下をepoch回繰り返す*/
-        shuffle(train_count, index); /*配列indexをシャッフル*/
-        momentum_SGD(train_x, train_y, train_count, n, index, A1, b1, A2, b2, /*momentum SGDの更新式によってA1~b3を更新*/
+        shuffle(train_count, index);  /*配列indexをシャッフル*/
+        momentum_SGD(train_x, train_y, train_count, n, index, A1, b1, A2,
+                     b2, /*momentum SGDの更新式によってA1~b3を更新*/
                      A3, b3, v_A1, v_b1, v_A2, v_b2, v_A3, v_b3, eta, alpha);
-        printf("Epoch %3d/%d\nTrain : ", i + 1, epoch); 
-        test(A1, b1, A2, b2, A3, b3, train_count, train_x, train_y); /*訓練データに対する正答率及び損失関数*/
+        printf("Epoch %3d/%d\nTrain : ", i + 1, epoch);
+        test(A1, b1, A2, b2, A3, b3, train_count, train_x,
+             train_y); /*訓練データに対する正答率及び損失関数*/
         printf("Test : ");
-        test(A1, b1, A2, b2, A3, b3, test_count, test_x, test_y); /*テストデータに対する正答率及び損失関数*/
+        test(A1, b1, A2, b2, A3, b3, test_count, test_x,
+             test_y); /*テストデータに対する正答率及び損失関数*/
         printf("\n");
     }
-    free_all(6, v_A1, v_A2, v_A3, v_b1, v_b2, v_b3); 
-    save("fc1.dat", 50, 784, A1, b1); /*各パラメータを保存*/ 
-    save("fc2.dat", 100, 50, A2, b2); 
+    free_all(6, v_A1, v_A2, v_A3, v_b1, v_b2, v_b3);
+    save("fc1.dat", 50, 784, A1, b1); /*各パラメータを保存*/
+    save("fc2.dat", 100, 50, A2, b2);
     save("fc3.dat", 10, 100, A3, b3);
     free_all(6, A1, b1, A2, b2, A3, b3);
     return 0;
