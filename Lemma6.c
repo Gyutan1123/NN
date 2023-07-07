@@ -1,6 +1,6 @@
-#include "nn.h"
-int main() { 
-     float *train_x = NULL;
+#include "nnmodified.h"
+int main() {
+    float *train_x = NULL;
     unsigned char *train_y = NULL;
     int train_count = -1;
     float *test_x = NULL;

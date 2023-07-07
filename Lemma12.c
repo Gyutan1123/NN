@@ -1,4 +1,4 @@
-#include "nn.h"
+#include "nnmodified.h"
 
 void shuffle(int n, int *x) {
     for (int i = 0; i < n; i++) {

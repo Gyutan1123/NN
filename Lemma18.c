@@ -1,4 +1,4 @@
-#include "nn.h"
+#include "nnmodified.h"
 
 void save(const char *filename, int m, int n, const float *A ,const float *b){
     FILE *write;

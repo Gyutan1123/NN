@@ -1,4 +1,4 @@
-#include "nn.h"
+#include "nnmodified.h"
 
 void add(int n, const float *x, float *o) {
     for (int i = 0; i < n; i++) {

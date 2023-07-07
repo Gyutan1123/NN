@@ -1,4 +1,4 @@
-#include "nn.h"
+#include "nnmodified.h"
 void print(int m, int n, const float *x) {
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
@@ -272,7 +272,7 @@ int main() {
 
     int epoch = 10;
     int n = 100;
-    float eta = 0.1;
+    float eta = 0.05;
     float *A1 = malloc(sizeof(float) * 784 * 50);
     float *A2 = malloc(sizeof(float) * 50 * 100);
     float *A3 = malloc(sizeof(float) * 100 * 10);

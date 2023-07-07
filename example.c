@@ -1,4 +1,4 @@
-#include "nn.h"
+#include "nnmodified.h"
 
 int main()
 {
